@@ -37,7 +37,7 @@ async function assignInitialTeams(participants) {
   
     for (let i = 0; i < teams.length; i++) {
       for (const member of teams[i]) {
-        await updateTeam(member.id, `1차_팀`, `Team ${i + 1}`); // '1차_팀' 열에 팀 저장
+        await updateTeam(member.id, `1차_팀`, i === 0 ? "대면팀" : "연호팀"); // 팀 이름 변경
       }
     }
   
@@ -46,7 +46,7 @@ async function assignInitialTeams(participants) {
     resultsDiv.innerHTML = ""; // 이전 결과 지우기
     teams.forEach((team, idx) => {
       const teamDiv = document.createElement("div");
-      teamDiv.innerHTML = `<h3>Team ${idx + 1}</h3><ul>${team
+      teamDiv.innerHTML = `<h3>${idx === 0 ? "대면팀" : "연호팀"}</h3><ul>${team
         .map(member => `<li>${member.name}</li>`)
         .join("")}</ul>`;
       resultsDiv.appendChild(teamDiv);
@@ -59,7 +59,7 @@ async function refreshTeams(participants) {
   
     for (let i = 0; i < teams.length; i++) {
       for (const member of teams[i]) {
-        await updateTeam(member.id, `2차_팀`, `Team ${i + 1}`); // '2차_팀' 열에 팀 저장
+        await updateTeam(member.id, `2차_팀`, i === 0 ? "대면팀" : "연호팀"); // 팀 이름 변경
       }
     }
   
@@ -68,7 +68,7 @@ async function refreshTeams(participants) {
     resultsDiv.innerHTML = ""; // 이전 결과 지우기
     teams.forEach((team, idx) => {
       const teamDiv = document.createElement("div");
-      teamDiv.innerHTML = `<h3>Team ${idx + 1}</h3><ul>${team
+      teamDiv.innerHTML = `<h3>${idx === 0 ? "대면팀" : "연호팀"}</h3><ul>${team
         .map(member => `<li>${member.name}</li>`)
         .join("")}</ul>`;
       resultsDiv.appendChild(teamDiv);
@@ -79,23 +79,25 @@ async function refreshTeams(participants) {
 async function updateTeam(pageId, columnName, teamName) {
     const url = `https://api.notion.com/v1/pages/${pageId}`;
     const response = await fetch(url, {
-      method: "PATCH",
-      headers: {
-        "Authorization": `Bearer ${NOTION_API_KEY}`,
-        "Content-Type": "application/json",
-        "Notion-Version": "2022-06-28"
-      },
-      body: JSON.stringify({
-        properties: {
-          [columnName]: { // '1차_팀' 또는 '2차_팀' 열을 동적으로 처리
-            title: [{ text: { content: teamName } }]
-          }
-        }
-      })
+        method: "PATCH",
+        headers: {
+            "Authorization": `Bearer ${NOTION_API_KEY}`,
+            "Content-Type": "application/json",
+            "Notion-Version": "2022-06-28"
+        },
+        body: JSON.stringify({
+            properties: {
+                [columnName]: {
+                    select: {
+                        name: teamName
+                    }
+                }
+            }
+        })
     });
-  
+
     if (!response.ok) {
-      throw new Error(`Failed to update page ${pageId}`);
+        throw new Error(`Failed to update page ${pageId}`);
     }
 }
   
