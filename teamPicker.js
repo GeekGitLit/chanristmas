@@ -1,3 +1,6 @@
+NOTION_API_KEY = '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'
+DATABASE_ID = '161530ea781980d0887aea7e4b09b14a'
+
 async function fetchParticipants() {
     const url = `https://api.notion.com/v1/databases/${DATABASE_ID}/query`;
     const response = await fetch(url, {
@@ -101,13 +104,62 @@ async function updateTeam(pageId, columnName, teamName) {
     }
 }
   
-  // 팀 배정 버튼 이벤트 리스너
-document.getElementById("assign-btn").addEventListener("click", async () => {
+  // 사용자 인증 함수
+async function verifyUser(name, studentId, phoneLast4) {
+    const participants = await fetchParticipants();
+    const user = participants.find(p => 
+        p.name === name && 
+        p.col_num === parseInt(studentId) && 
+        p.hp_last4_num === phoneLast4
+    );
+    
+    if (!user) {
+        throw new Error("입력하신 정보와 일치하는 사용자를 찾을 수 없습니다.");
+    }
+    
+    return user;
+}
+
+// 전역 변수로 현재 사용자 정보 저장
+let currentUser = null;
+
+// 사용자 확인 버튼 이벤트 리스너
+document.getElementById("verify-btn").addEventListener("click", async () => {
     try {
-      const participants = await fetchParticipants(); // 참가자 데이터 가져오기
-      await assignInitialTeams(participants); // '1차_팀' 열에 팀 배정
+        const name = document.getElementById("name").value;
+        const studentId = document.getElementById("student-id").value;
+        const phoneLast4 = document.getElementById("phone-last4").value;
+
+        if (!name || !studentId || !phoneLast4) {
+            alert("모든 필드를 입력해주세요.");
+            return;
+        }
+
+        currentUser = await verifyUser(name, studentId, phoneLast4);
+        
+        // 인증 성공 시 팀 배정 섹션 표시
+        document.getElementById("auth-form").style.display = "none";
+        document.getElementById("team-section").style.display = "block";
+        
     } catch (error) {
-      alert(error.message);
+        alert(error.message);
+    }
+});
+
+// 팀 배정 버튼 이벤트 리스너 수정
+document.getElementById("assign-btn").addEventListener("click", async () => {
+    if (!currentUser) {
+        alert("먼저 본인 확인을 해주세요.");
+        return;
+    }
+
+    try {
+        const participants = await fetchParticipants();
+        await assignInitialTeams(participants);
+        document.getElementById("refresh-btn").style.display = "inline";
+        document.getElementById("assign-btn").style.display = "none";
+    } catch (error) {
+        alert(error.message);
     }
 });
   
